@@ -1,0 +1,30 @@
+#!/usr/bin/env stap
+
+global start, interval
+probe misc = syscall.{open, close, read, write} {}
+
+probe misc {
+    start[name, tid()] = gettimeofday_us()
+}
+
+probe misc.return {
+    now = gettimeofday_us();
+    begin = start[name, tid()]
+    if (begin) {
+        interval[name] <<< now - begin
+    }
+    delete start[name, tid()]
+}
+
+probe begin {
+    printf("Ctrl-C to stop\r\n");
+}
+
+probe end {
+    foreach (name in interval) {
+        printf("syscall %s max:%d min:%d avg: %d us\r\n", name,
+            @max(interval[name]), @min(interval[name]), @avg(interval[name])
+        )
+        print(@hist_log(interval[name]))
+    }
+}
