@@ -1,0 +1,13 @@
+#! /usr/bin/env stap
+
+probe begin {
+	for (r = 30; r < 38; r ++) {
+		for (c = 40; c < 48; c ++) {
+			for (t = 0; t < 2; t ++) {
+				ansi_set_color(r, c, t)
+				printf("%s ", !t ? "Normal" : "Bold")
+				ansi_reset_color()
+			}
+		}
+	}
+}
