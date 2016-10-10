@@ -1,0 +1,25 @@
+#! /usr/bin/env stap
+# stap func_time_stats.stp syscall.open
+
+global start, intervals
+
+probe $1 {
+  start[tid()]   = gettimeofday_us()
+}
+
+probe $1.return {
+  t = gettimeofday_us()
+  old_t = start[tid()]
+
+  if (old_t) {
+    intervals <<< t - old_t
+  }
+  delete start[tid()]
+}
+
+probe end {
+  printf("%s interval min:%dus, max:%dus cnt:%d",
+    "$1", @min(intervals), @max(intervals), @count(intervals)
+  )
+  print(@hist_log(intervals))
+}
