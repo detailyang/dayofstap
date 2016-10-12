@@ -1,0 +1,19 @@
+#! /usr/bin/env stap
+
+# watchout $$params$$ and $$return$$
+
+function trace(entry_p, extra) {
+    printf("%s%s%s %s\n", thread_indent(entry_p),
+        (entry_p > 0 ? "->" : "<-"),
+        ppfunc(),
+        extra
+    )
+}
+
+probe $1.call {
+    trace(1, $$params$$)
+}
+
+probe $1.return {
+    trace(-1, $$return$$)
+}
