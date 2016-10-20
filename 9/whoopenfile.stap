@@ -1,0 +1,10 @@
+#! /usr/bin/env stap
+
+# stap whoopenfile xx
+
+probe syscall.open {
+    if (filename =~ %( $# == 0 %? ".*" %: @1 %)) {
+    	printf("%s(%d) is opening the filename :%s\r\n", execname(), pid(), filename)
+    }
+}
+
