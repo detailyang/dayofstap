@@ -34,7 +34,7 @@ probe nd_syscall.*.return {
     last = thread_t[tid()]
     argstr = thread_args[tid()]
 
-    if (last && argstr) {
+    if (last) {
         diff = now -last
         prefix = sprintf("%s.%06d ", ctime(last/1000000), last%1000000)
         suffix = sprintf(" <%d.%06d>", diff/1000000, diff%1000000)
