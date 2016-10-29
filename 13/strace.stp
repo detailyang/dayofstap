@@ -1,0 +1,46 @@
+#! /usr/bin/env stap
+
+global thread_args
+global thread_t
+global blacklist[2]
+
+probe begin {
+    /* list those syscalls that never .return */
+    blacklist["exit"]=1
+    blacklist["exit_group"]=1
+
+    warn("stracing syscall")
+}
+
+probe nd_syscall.* {
+    if (pid() != target()) next
+
+    now = gettimeofday_us()
+
+    if (name in blacklist) {
+        prefix = sprintf("%s[%d] %s.%06d ", execname(), pid(), ctime(now/1000000), now%1000000)
+        printf("%s %s(%s)\n", prefix, name, argstr)
+        next
+    }
+
+    thread_t[tid()] = now
+    thread_args[tid()] = argstr
+}
+
+probe nd_syscall.*.return {
+    if (pid() != target()) next
+
+    now = gettimeofday_us()
+    last = thread_t[tid()]
+    argstr = thread_args[tid()]
+
+    if (last && argstr) {
+        diff = now -last
+        prefix = sprintf("%s.%06d ", ctime(last/1000000), last%1000000)
+        suffix = sprintf(" <%d.%06d>", diff/1000000, diff%1000000)
+        printf("%s %s(%s) = %s%s\n", prefix, name, argstr, retstr, suffix)
+    }
+
+    delete thread_t[tid()]
+    delete thread_args[tid()]
+}
