@@ -1,0 +1,37 @@
+#! /usr/bin/env stap
+
+global r, w, io
+
+probe begin {
+	warn("Collecting IO Top 10")
+}
+
+probe vfs.write.return {
+	w[execname()] += bytes_written
+}
+
+probe vfs.read.return {
+	r[execname()] += bytes_read
+}
+
+probe timer.s(5) {
+	printf("%16s\t%10s\t%10s\n", "Process Name", "Read(KB)", "Write(KB)")
+	
+	foreach (name in w) {
+		io[name] += w[name]
+	}
+
+	foreach (name in r) {
+		io[name] += r[name]
+	}
+	
+	foreach(name in io- limit 10) {
+		printf("%16s\t%10d\t%10d\n", name, r[name]/1024, w[name]/1024)	
+	}
+
+	delete r
+	delete w
+	delete io
+
+	print("\n")
+}
