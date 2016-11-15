@@ -1,0 +1,35 @@
+#! /usr/bin/env stap
+global t%
+global pp%
+global k%
+
+probe begin {
+    log("Collecting phpredis")
+}
+
+probe process("./redis.so").function("zim_Redis_*") {
+    pp[tid()] = sprintf("%s", ppfunc())
+    t[ppfunc(), tid()] = gettimeofday_us()
+}
+
+probe process("./redis.so").function("zim_Redis_*").return {
+    begin = t[ppfunc(), tid()]
+    if (begin) {
+        cmd = k[tid()]
+        if (cmd != "") {
+            printf("%s(%d)<%s[%dus]>: cmd:%s\n", execname(), tid(), ppfunc(), gettimeofday_us() - begin, k[tid()])
+        } else {
+            printf("%s(%d)<%s[%dus]>\n", execname(), tid(), ppfunc(), gettimeofday_us() - begin)
+        }
+    }
+    delete t[ppfunc(), tid()]
+    delete k[tid()]
+    delete pp[tid()]
+}
+
+probe process("./redis.so").function("redis_sock_write") {
+    func = pp[tid()]
+    if (func != "") {
+        k[tid()] = sprintf("%s", str_replace(user_string_n($cmd, $sz), "\r\n", " "))
+    }
+}
