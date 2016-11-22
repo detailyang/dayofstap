@@ -1,0 +1,37 @@
+#! /usr/bin/env stap
+#
+global rw
+global total%
+
+probe netdev.receive {
+	rw[0, pid(), execname(), dev_name] <<< length
+}
+
+probe netdev.transmit {
+	rw[1, pid(), execname(), dev_name] <<< length
+}
+
+probe timer.ms(5000) {
+	foreach ([type, pid, execname, dev_name] in rw) {
+		if (type == 0) {
+			total[pid, execname, dev_name] += @count(rw[0, pid, execname, dev_name])
+		} else {
+			total[pid, execname, dev_name] += @count(rw[1, pid, execname, dev_name])
+		}
+	}
+	
+	printf("%20s(%5d) %6s %10s %10s %10s %10s\n", "Process", 0, "dev", "Send(PK)", "Recv(PK)",
+			"Send(KB)", "Recv(KB)");
+	foreach ([pid, execname, dev_name] in total - limit 10) {
+		printf("%20s(%5d) %6s %10d %10d %10d %10d\n", execname, pid, dev_name, 
+			@count(rw[1, pid, execname, dev_name]),
+			@count(rw[0, pid, execname, dev_name]),
+			@sum(rw[1, pid, execname, dev_name]) / 1024,
+			@sum(rw[0, pid, execname, dev_name]) / 1024
+		)
+	}
+
+	delete rw
+	delete total
+}
+
