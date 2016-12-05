@@ -1,0 +1,7 @@
+#! /usr/bin/env stap
+
+probe signal.send 
+{
+	printf("%s(%d) receive %s\n", pid_name, sig_pid, sig_name)
+}
+
