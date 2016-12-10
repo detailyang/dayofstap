@@ -1,0 +1,4 @@
+probe scheduler.process_fork {
+    printf("parent %d is forking for child %d\r\n", parent_pid, child_pid);
+}
+
