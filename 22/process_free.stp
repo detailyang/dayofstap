@@ -1,0 +1,4 @@
+probe scheduler.process_free {
+	printf("pid:%d is getting free and priority:%d\n", pid, priority);	
+}
+
