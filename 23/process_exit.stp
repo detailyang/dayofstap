@@ -1,0 +1,4 @@
+probe scheduler.process_exit {
+    printf("pid:%d priority:%d is exiting\r\n", pid, priority)
+}
+
