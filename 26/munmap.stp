@@ -1,0 +1,3 @@
+probe vm.munmap {
+	printf("%s(%d) is unmmap length:%d name:%s, address:%p", pid(), length, name, address);
+}

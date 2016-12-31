@@ -1,0 +1,4 @@
+
+probe vm.mmap {
+	printf("%s(%d) is mmap length:%d name:%s, address:%p", pid(), length, name, address);
+}
